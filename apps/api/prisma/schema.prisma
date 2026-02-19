@@ -1,0 +1,140 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum DayOfWeek {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
+}
+
+enum RecordMetric {
+  MAX_WEIGHT
+  ESTIMATED_ONE_REP_MAX
+}
+
+model User {
+  id           String           @id @default(cuid())
+  email        String           @unique
+  passwordHash String
+  name         String
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  splits       WorkoutSplit[]
+  sessions     WorkoutSession[]
+  records      PersonalRecord[]
+}
+
+model Exercise {
+  id              String             @id @default(cuid())
+  name            String             @unique
+  primaryMuscle   String
+  equipment       String?
+  createdAt       DateTime           @default(now())
+  splitDayEntries SplitDayExercise[]
+  workoutSets     WorkoutSet[]
+  personalRecords PersonalRecord[]
+}
+
+model WorkoutSplit {
+  id        String     @id @default(cuid())
+  userId    String
+  name      String
+  goal      String?
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  days      SplitDay[]
+
+  @@index([userId])
+}
+
+model SplitDay {
+  id        String             @id @default(cuid())
+  splitId   String
+  dayOfWeek DayOfWeek
+  focus     String?
+  createdAt DateTime           @default(now())
+  split     WorkoutSplit       @relation(fields: [splitId], references: [id], onDelete: Cascade)
+  exercises SplitDayExercise[]
+  sessions  WorkoutSession[]
+
+  @@unique([splitId, dayOfWeek])
+  @@index([splitId])
+}
+
+model SplitDayExercise {
+  id           String   @id @default(cuid())
+  splitDayId   String
+  exerciseId   String
+  targetSets   Int
+  targetRepMin Int
+  targetRepMax Int
+  position     Int
+  splitDay     SplitDay  @relation(fields: [splitDayId], references: [id], onDelete: Cascade)
+  exercise     Exercise  @relation(fields: [exerciseId], references: [id], onDelete: Restrict)
+
+  @@unique([splitDayId, position])
+  @@index([splitDayId])
+  @@index([exerciseId])
+}
+
+model WorkoutSession {
+  id          String      @id @default(cuid())
+  userId      String
+  splitDayId  String?
+  notes       String?
+  performedAt DateTime    @default(now())
+  createdAt   DateTime    @default(now())
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  splitDay    SplitDay?   @relation(fields: [splitDayId], references: [id], onDelete: SetNull)
+  sets        WorkoutSet[]
+  records     PersonalRecord[]
+
+  @@index([userId, performedAt])
+  @@index([splitDayId])
+}
+
+model WorkoutSet {
+  id         String         @id @default(cuid())
+  sessionId  String
+  exerciseId String
+  setNumber  Int
+  reps       Int
+  weightKg   Float
+  rpe        Float?
+  notes      String?
+  createdAt  DateTime       @default(now())
+  session    WorkoutSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  exercise   Exercise       @relation(fields: [exerciseId], references: [id], onDelete: Restrict)
+
+  @@unique([sessionId, exerciseId, setNumber])
+  @@index([exerciseId, createdAt])
+}
+
+model PersonalRecord {
+  id         String         @id @default(cuid())
+  userId      String
+  exerciseId  String
+  sessionId   String?
+  metric      RecordMetric
+  value       Float
+  achievedAt  DateTime
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  exercise    Exercise      @relation(fields: [exerciseId], references: [id], onDelete: Restrict)
+  session     WorkoutSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, exerciseId, metric])
+  @@index([userId, achievedAt])
+}

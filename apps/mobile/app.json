@@ -1,0 +1,12 @@
+{
+  "expo": {
+    "name": "Split Mobile",
+    "slug": "split-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "assetBundlePatterns": [
+      "**/*"
+    ]
+  }
+}
