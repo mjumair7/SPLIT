@@ -103,9 +103,3 @@ npm run dev:mobile
 - Split-day exercise membership enforcement when logging against a specific split day
 - PR updates happen transactionally with workout logging
 
-## Interview Prep
-Use `docs/INTERVIEW_GUIDE.md` to prepare complete explanations of:
-- how you planned and built the project using the SWE lifecycle
-- why your data model is normalized this way
-- where you enforce validation and consistency
-- how you would scale or harden this for production
