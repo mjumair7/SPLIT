@@ -1,88 +1,95 @@
-# Split App - Full-Stack Gym Training Platform
+# Split
 
-Split is a full-stack workout app where users can design workout splits, log sets, and track personal records over time.
+[![CI](https://github.com/mjumair7/SPLIT/actions/workflows/ci.yml/badge.svg)](https://github.com/mjumair7/SPLIT/actions/workflows/ci.yml)
 
-## Tech Stack
-- Web: Next.js, TailwindCSS, Recharts
-- Mobile: React Native (Expo)
-- API: Node.js, Express, Prisma
-- Database: PostgreSQL
+Split is a workout tracker I built around a problem I kept running into at the gym: a routine is easy to write down, but much harder to connect to consistent session logs and useful progress data.
 
-## Features
-- Register/login with JWT auth
-- Create and manage multi-day workout splits
-- Define exercises, target sets, and rep ranges per split day
-- Log workout sessions and sets
-- Automatic personal record tracking:
-  - Max weight
-  - Estimated one-rep max (Epley formula)
-- Analytics dashboard for progression trends
-- Mobile companion for quick logging and split visibility
+The project has a web dashboard, a small Expo mobile client, and one Express API backed by PostgreSQL. My main focus was the data model—keeping planned workouts separate from completed sessions and making record updates part of the same transaction as the workout log.
 
-## Repository Layout
-- `apps/api`: Express + Prisma backend
-- `apps/web`: Next.js dashboard
-- `apps/mobile`: Expo React Native app
-- `docs/INTERVIEW_GUIDE.md`: architecture + interview prep walkthrough
-- `docker-compose.yml`: local PostgreSQL
+## Current status
 
-## Local Setup
+This is a portfolio-scale build, not a hosted fitness product. The core flows are implemented:
 
-### 1. Start PostgreSQL
-```bash
-docker compose up -d
+- register and sign in;
+- create multi-day workout splits;
+- assign exercises and rep targets to each day;
+- log performed sets;
+- track maximum weight and estimated one-rep max;
+- view recent sessions and progress data from web or mobile clients.
+
+The repository now has unit coverage for the shared training calculations. API integration tests and refresh-token support are still on the list; they are not presented as finished.
+
+## Architecture
+
+```mermaid
+flowchart LR
+    W[Next.js web] --> API[Express API]
+    M[Expo mobile] --> API
+    API --> V[Zod validation]
+    API --> P[Prisma]
+    P --> DB[(PostgreSQL)]
+    API --> J[JWT auth]
 ```
 
-### 2. Configure environment
-Copy env templates into each app:
-```bash
+```text
+apps/api/       Express, Prisma, validation, analytics
+apps/web/       Next.js dashboard
+apps/mobile/    Expo client for quick logging
+docs/           manual API examples
+```
+
+## Why the schema is split this way
+
+Planning and history are different things. A `WorkoutSplit` describes what I intend to do; a `WorkoutSession` records what actually happened. Keeping them separate means editing a routine later does not rewrite old training history.
+
+Personal records are cached by user, exercise, and metric. When a session is logged, the session, its sets, and any record updates are written in one database transaction. If one write fails, the entire operation rolls back.
+
+The API also checks ownership, exercise membership, duplicate exercises, and sequential set numbering before committing a session.
+
+## Run locally
+
+Requirements: Node.js 22, Docker, and npm.
+
+```sh
+docker compose up -d
+
 cp apps/api/.env.example apps/api/.env
 cp apps/web/.env.example apps/web/.env.local
 cp apps/mobile/.env.example apps/mobile/.env
-```
 
-Set values in `/Users/mjumair/Split-App/apps/api/.env`:
-- `DATABASE_URL`
-- `JWT_SECRET` (must be at least 16 chars)
-- `PORT`
-
-Set values in `/Users/mjumair/Split-App/apps/web/.env.local`:
-- `NEXT_PUBLIC_API_BASE_URL`
-
-Set values in `/Users/mjumair/Split-App/apps/mobile/.env`:
-- `EXPO_PUBLIC_API_BASE_URL`
-
-### 3. Install dependencies
-```bash
 npm install
-```
-
-### 4. Generate Prisma client, migrate DB, seed exercises
-```bash
 npm --workspace apps/api run db:generate
 npm --workspace apps/api run db:migrate
 npm --workspace apps/api run db:seed
 ```
 
-### 5. Run apps
-```bash
-npm run dev:api
-npm run dev:web
-npm run dev:mobile
+Set the values described in each copied environment file, then start whichever clients you need:
+
+```sh
+npm run dev:api       # http://localhost:4000
+npm run dev:web       # http://localhost:3000
+npm run dev:mobile    # Expo development server
 ```
 
-- API: `http://localhost:4000`
-- Web: `http://localhost:3000`
-- Mobile: Expo dev server
+## Tests and checks
 
-## API Endpoints
+```sh
+npm test
+npm run build
+```
 
-### Public
+GitHub Actions runs both commands for pushes and pull requests.
+
+## API surface
+
+Public:
+
 - `POST /api/auth/register`
 - `POST /api/auth/login`
 - `GET /api/health`
 
-### Protected (Bearer token)
+Authenticated:
+
 - `GET /api/me`
 - `GET /api/exercises`
 - `POST /api/splits`
@@ -94,12 +101,14 @@ npm run dev:mobile
 - `GET /api/analytics/summary`
 - `GET /api/analytics/exercise/:exerciseId/progress`
 
-## Core Consistency Checks
-- User ownership checks on splits/split days
-- Duplicate day prevention inside a split
-- Duplicate exercise prevention inside a session
-- Sequential set numbering per exercise (`1..n`)
-- Exercise existence validation for both split creation and session logging
-- Split-day exercise membership enforcement when logging against a specific split day
-- PR updates happen transactionally with workout logging
+The route handlers in `apps/api/src/` are the source of truth for request and response shapes.
 
+## Things I would improve next
+
+1. Add database-backed API integration tests.
+2. Use short-lived access tokens with refresh-token rotation.
+3. Add pagination to long session histories.
+4. Share generated API types between the web and mobile clients.
+5. Make kilograms/pounds a user preference instead of a fixed assumption.
+
+The project taught me more about relational modelling and consistency than about drawing charts—which was the point.

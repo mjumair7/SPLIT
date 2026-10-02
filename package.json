@@ -11,6 +11,7 @@
     "dev:mobile": "npm --workspace apps/mobile run start",
     "build": "npm --workspace apps/api run build && npm --workspace apps/web run build",
     "db:migrate": "npm --workspace apps/api run db:migrate",
-    "db:seed": "npm --workspace apps/api run db:seed"
+    "db:seed": "npm --workspace apps/api run db:seed",
+    "test": "npm --workspace apps/api test"
   }
 }
