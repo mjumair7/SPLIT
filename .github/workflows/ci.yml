@@ -20,4 +20,4 @@ jobs:
       - run: npm ci
       - run: npm --workspace apps/api run db:generate
       - run: npm test
-      - run: npm run build
+      - run: npm --workspace apps/api run build
