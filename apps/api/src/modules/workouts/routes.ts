@@ -4,6 +4,7 @@ import { z } from "zod";
 import { prisma } from "../../config/prisma";
 import { asyncHandler } from "../../utils/asyncHandler";
 import { ApiError } from "../../utils/apiError";
+import { estimateOneRepMax } from "../../utils/trainingMath";
 
 const setSchema = z.object({
   setNumber: z.number().int().min(1).max(20),
@@ -54,10 +55,6 @@ const createSessionSchema = z
 const listQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(20)
 });
-
-function estimateOneRepMax(weightKg: number, reps: number) {
-  return weightKg * (1 + reps / 30);
-}
 
 export const workoutsRouter = Router();
 

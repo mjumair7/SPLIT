@@ -4,6 +4,7 @@ import { z } from "zod";
 import { prisma } from "../../config/prisma";
 import { asyncHandler } from "../../utils/asyncHandler";
 import { ApiError } from "../../utils/apiError";
+import { estimateOneRepMax, setVolume } from "../../utils/trainingMath";
 
 const paramsSchema = z.object({
   exerciseId: z.string().cuid()
@@ -12,10 +13,6 @@ const paramsSchema = z.object({
 const progressQuerySchema = z.object({
   days: z.coerce.number().int().min(7).max(365).default(90)
 });
-
-function estimateOneRepMax(weightKg: number, reps: number) {
-  return weightKg * (1 + reps / 30);
-}
 
 export const analyticsRouter = Router();
 
@@ -84,7 +81,7 @@ analyticsRouter.get(
       row.bestWeight = Math.max(row.bestWeight, set.weightKg);
       row.bestEstimatedOneRepMax = Math.max(row.bestEstimatedOneRepMax, oneRepMax);
       row.totalReps += set.reps;
-      row.totalVolume += set.reps * set.weightKg;
+      row.totalVolume += setVolume(set.weightKg, set.reps);
 
       byDate.set(date, row);
     }
@@ -160,7 +157,10 @@ analyticsRouter.get(
       })
     ]);
 
-    const totalVolumeKg = setsThisMonth.reduce((sum, set) => sum + set.reps * set.weightKg, 0);
+    const totalVolumeKg = setsThisMonth.reduce(
+      (sum, set) => sum + setVolume(set.weightKg, set.reps),
+      0
+    );
     const totalReps = setsThisMonth.reduce((sum, set) => sum + set.reps, 0);
 
     res.json({
