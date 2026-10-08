@@ -2,13 +2,13 @@
 
 [![CI](https://github.com/mjumair7/SPLIT/actions/workflows/ci.yml/badge.svg)](https://github.com/mjumair7/SPLIT/actions/workflows/ci.yml)
 
-Split is a workout tracker I built around a problem I kept running into at the gym: a routine is easy to write down, but much harder to connect to consistent session logs and useful progress data.
+Split is my workout-log project. I wanted a routine, the sets I actually performed, and my progress records to stay connected without treating them as the same thing.
 
-The project has a web dashboard, a small Expo mobile client, and one Express API backed by PostgreSQL. My main focus was the data model—keeping planned workouts separate from completed sessions and making record updates part of the same transaction as the workout log.
+There is a Next.js dashboard, a small Expo client, and one Express API backed by PostgreSQL. Most of my attention went into the data model and the session-writing flow rather than the charts.
 
 ## Current status
 
-This is a portfolio-scale build, not a hosted fitness product. The core flows are implemented:
+This runs locally and is still a portfolio project. The parts that currently work are:
 
 - register and sign in;
 - create multi-day workout splits;
@@ -38,7 +38,7 @@ apps/mobile/    Expo client for quick logging
 docs/           manual API examples
 ```
 
-## Why the schema is split this way
+## The data-model decision
 
 Planning and history are different things. A `WorkoutSplit` describes what I intend to do; a `WorkoutSession` records what actually happened. Keeping them separate means editing a routine later does not rewrite old training history.
 
@@ -111,4 +111,4 @@ The route handlers in `apps/api/src/` are the source of truth for request and re
 4. Share generated API types between the web and mobile clients.
 5. Make kilograms/pounds a user preference instead of a fixed assumption.
 
-The project taught me more about relational modelling and consistency than about drawing charts—which was the point.
+The most useful part of this build was working through relational modelling, ownership checks, and transaction boundaries. The interface is still the less-finished part.
